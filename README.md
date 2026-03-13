@@ -1,6 +1,6 @@
 # QuizMind AI
 
-Hello Aryan! Welcome to your AI-powered quiz generator!
+Welcome to QuizMind AI - An intelligent quiz generation platform for students, developers, and educators.
 
 ## What is This?
 
@@ -31,7 +31,7 @@ QuizMind AI creates custom quiz questions using **free local AI** (Ollama). No A
 node server.js
 ```
 
-Success: You should see: `📡 Using AI Provider: OLLAMA` and `Server is listening on port 3001`
+Success: You should see: `Using AI Provider: OLLAMA` and `Server is listening on port 3001`
 
 ### Step 3: Start the Frontend (in a NEW terminal)
 
@@ -215,12 +215,12 @@ Get-Process node | Stop-Process -Force
 
 ---
 
-## Made with love by Aryan
+## About This Project
 
 **Version:** 1.0  
 **Last Updated:** March 14, 2026  
-**Status:** Working & Getting Smarter Every Day
+**Status:** Active and continuously improved
 
 ---
 
-**Happy Learning!** Now go ace those quizzes!
+**Get started now!** Begin creating AI-powered quizzes and unlock new learning possibilities.
