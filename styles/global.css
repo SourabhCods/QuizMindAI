@@ -1,0 +1,146 @@
+/* ─── styles/global.css ──────────────────────────────────────────────────────
+   Design system: dark industrial + warm amber accents.
+   Font: Iosevka Charon Mono (Google Fonts) — monospaced editorial feel.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+:root {
+  /* Core palette */
+  --c-bg: #0e0e12;
+  --c-surface: #16161d;
+  --c-surface2: #1e1e28;
+  --c-surface3: #26262f;
+  --c-border: rgba(255, 255, 255, 0.07);
+  --c-border-lit: rgba(255, 255, 255, 0.13);
+
+  /* Text */
+  --c-text: #e2ddd6;
+  --c-text-sub: #7a7670;
+  --c-text-dim: #4a4844;
+
+  /* Accents */
+  --c-amber: #e8a020;
+  --c-amber-lt: #f5c96a;
+  --c-amber-dim: rgba(232, 160, 32, 0.1);
+  --c-amber-mid: rgba(232, 160, 32, 0.2);
+
+  --c-teal: #1fb8a8;
+  --c-teal-lt: #3dd9c8;
+  --c-teal-dim: rgba(31, 184, 168, 0.1);
+
+  --c-coral: #e05c3a;
+  --c-coral-dim: rgba(224, 92, 58, 0.1);
+
+  --c-green: #4caf82;
+  --c-green-dim: rgba(76, 175, 130, 0.1);
+
+  /* Layout */
+  --sidebar-w: 238px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+
+  /* Typography */
+  --font: "Iosevka Charon Mono", "Courier New", monospace;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: 1.3rem;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--c-border-lit);
+  border-radius: 10px;
+}
+
+/* ── App shell ──────────────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app__main {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────────────── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 184, 168, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(31, 184, 168, 0);
+  }
+}
+
+.fade-in {
+  animation: fadeSlideUp 0.3s ease both;
+}
