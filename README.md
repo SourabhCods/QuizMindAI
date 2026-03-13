@@ -19,24 +19,30 @@ QuizMind AI creates custom quiz questions using **free local AI** (Ollama). No A
 ## How to Start
 
 ### Step 1: Start Ollama (DO THIS FIRST!)
+
 ```bash
 # Windows - Ollama usually runs in the background, OR manually:
 "C:\Users\acer\AppData\Local\Programs\Ollama\ollama.exe" serve
 ```
 
 ### Step 2: Start the Backend Server
+
 ```bash
 node server.js
 ```
+
 Success: You should see: `📡 Using AI Provider: OLLAMA` and `Server is listening on port 3001`
 
 ### Step 3: Start the Frontend (in a NEW terminal)
+
 ```bash
 npm run dev
 ```
+
 Success: You should see: `VITE ready in XXX ms` and `Local: http://localhost:5173`
 
 ### Step 4: Open in Browser
+
 Go to `http://localhost:5173` and start creating quizzes!
 
 ---
@@ -104,18 +110,22 @@ When you ask for **5 Algebra questions**:
 ## Troubleshooting
 
 ### "Failed to connect to Ollama"
+
 - Ollama not running? Start it first: `"C:\Users\acer\AppData\Local\Programs\Ollama\ollama.exe" serve`
 - Still not working? Try: `curl http://localhost:11434/api/tags`
 
 ### "Only 2 questions generated (asked for 5)"
+
 - Model is being stubborn
 - The prompt in `apiService.js` has been fixed to be very explicit now
 - If still broken, check server logs for "Parsed X questions"
 
 ### "Font sizes too small"
+
 - Already fixed! Check `styles/components.css` - sizes increased 30-50%
 
 ### Slow to generate questions
+
 - Ollama is thinking (orca-mini ~5-10 seconds)
 - This is normal with local AI
 - If taking >30 seconds, restart Ollama
@@ -124,12 +134,12 @@ When you ask for **5 Algebra questions**:
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | React 18 + Vite | Beautiful UI |
-| **Backend** | Express.js | API proxy |
+| Layer         | Technology         | Purpose             |
+| ------------- | ------------------ | ------------------- |
+| **Frontend**  | React 18 + Vite    | Beautiful UI        |
+| **Backend**   | Express.js         | API proxy           |
 | **AI Engine** | Ollama (orca-mini) | Question generation |
-| **Styling** | CSS (Dark theme) | Industrial look |
+| **Styling**   | CSS (Dark theme)   | Industrial look     |
 
 ---
 
@@ -167,8 +177,8 @@ When you ask for **5 Algebra questions**:
 
 ```bash
 # Start everything at once (if on Windows):
-Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; 
-Start-Sleep -Seconds 2; 
+Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force;
+Start-Sleep -Seconds 2;
 node server.js &
 npm run dev
 
