@@ -1,265 +1,255 @@
-// ─── presenter/QuizPresenter.jsx ─────────────────────────────────────────────
-// Owns all quiz state machine logic.
-// Calls model/apiService for AI generation & explanations.
-// Calls model/sessionStore to persist results.
-// Passes computed props to QuizSetupView / QuizPlayView / QuizResultView.
-
 import { useState, useEffect, useRef, useCallback } from "react";
-import { generateQuiz, generateExplanation } from "../model/apiService.js";
+import {
+  apiGenerateQuiz,
+  apiGenerateExplanation,
+} from "../model/apiService.js";
 import { recordQuizResult } from "../model/sessionStore.js";
-import { SUBJECTS, TOPICS, ADAPTIVE_STREAK_THRESHOLD } from "../model/constants.js";
-import { QuizSetupView, QuizPlayView, QuizResultView } from "../view/QuizView.jsx";
-import { Toast, useToast } from "../view/primitives.jsx";
+import QuizSetupView, {
+  QuizPlayView,
+  QuizResultView,
+} from "../view/QuizView.jsx";
+import { TOPICS } from "../model/constants.js";
+import { LoadingPage } from "../view/primitives.jsx";
 
-// Quiz phases (internal state machine)
-const PHASE = {
-  SETUP:   "setup",
-  LOADING: "loading",
-  PLAYING: "playing",
-  RESULT:  "result",
-};
+const DIFFICULTY_ORDER = ["Easy", "Medium", "Hard"];
 
-const DEFAULT_CONFIG = {
-  subject:    "Mathematics",
-  topic:      "Algebra",
-  difficulty: "Medium",
-  numQ:       5,
-  timePerQ:   30,
-};
+export default function QuizPresenter({ onBack }) {
+  // ── Config — passed as single object to QuizSetupView ─────────────────────
+  const [config, setConfig] = useState({
+    subject: "Mathematics",
+    topic: "Algebra",
+    difficulty: "Medium",
+    numQ: 5,
+    timePerQ: 30,
+  });
 
-export function QuizPresenter({ initialConfig = {}, onNavigate }) {
-  // ── State ──────────────────────────────────────────────────────────────────
-  const [phase,      setPhase]      = useState(PHASE.SETUP);
-  const [config,     setConfig]     = useState({ ...DEFAULT_CONFIG, ...initialConfig });
-  const [questions,  setQuestions]  = useState([]);
-  const [current,    setCurrent]    = useState(0);
-  const [answers,    setAnswers]    = useState([]);   // [{ selected, correct, timedOut }]
-  const [selectedIdx, setSelectedIdx] = useState(null);
-  const [answered,   setAnswered]   = useState(false);
-  const [timeLeft,   setTimeLeft]   = useState(DEFAULT_CONFIG.timePerQ);
+  // ── Quiz runtime state ─────────────────────────────────────────────────────
+  const [phase, setPhase] = useState("setup");
+  const [questions, setQuestions] = useState([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [selectedIdx, setSelectedIdx] = useState(null); // 0-3 or null
+  const [answered, setAnswered] = useState(false);
+  const [answers, setAnswers] = useState([]); // [{ correct, selected, timedOut }]
   const [explanation, setExplanation] = useState("");
-  const [loadingExp, setLoadingExp] = useState(false);
-  const [error,      setError]      = useState("");
-  const [streak,     setStreak]     = useState(0);
+  const [loadingExpl, setLoadingExpl] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [streak, setStreak] = useState(0);
+  const [error, setError] = useState("");
 
   const timerRef = useRef(null);
-  const { toast, show } = useToast();
 
-  // ── Adaptive difficulty ────────────────────────────────────────────────────
-  // Returns adjusted difficulty label based on recent performance.
-  const adaptiveDifficulty = useCallback(() => {
-    const base = config.difficulty;
-    if (streak >= ADAPTIVE_STREAK_THRESHOLD) {
-      if (base === "Easy")   return "Medium";
-      if (base === "Medium") return "Hard";
-    }
-    const last3 = answers.slice(-3);
-    if (last3.length === 3 && last3.every((a) => !a.correct)) {
-      if (base === "Hard")   return "Medium";
-      if (base === "Medium") return "Easy";
-    }
-    return base;
-  }, [streak, answers, config.difficulty]);
+  // ── Config change handler — resets topic when subject changes ──────────────
+  function handleConfigChange(partial) {
+    setConfig((prev) => {
+      const next = { ...prev, ...partial };
+      if (partial.subject && partial.subject !== prev.subject) {
+        next.topic = (TOPICS[partial.subject] || [])[0] || "";
+      }
+      return next;
+    });
+  }
 
-  // ── Timer management ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (phase !== PHASE.PLAYING || answered) return;
-
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  const startTimer = useCallback((seconds) => {
+    clearInterval(timerRef.current);
+    setTimeLeft(seconds);
     timerRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
           clearInterval(timerRef.current);
-          handleTimeout();
+          handleSelect(null, true); // timed out
           return 0;
         }
-        return t - 1;
+        return prev - 1;
       });
     }, 1000);
+  }, []); // eslint-disable-line
 
+  useEffect(() => {
+    if (phase === "playing") startTimer(config.timePerQ);
     return () => clearInterval(timerRef.current);
-  }, [phase, current, answered]);
+  }, [phase, currentIdx]); // eslint-disable-line
 
-  // ── Generate quiz (calls API) ──────────────────────────────────────────────
-  const handleGenerate = async () => {
-    setPhase(PHASE.LOADING);
+  // ── Generate quiz ──────────────────────────────────────────────────────────
+  async function handleGenerate() {
     setError("");
+    setPhase("loading");
     try {
-      const qs = await generateQuiz(config);
+      const qs = await apiGenerateQuiz({
+        subject: config.subject,
+        topic: config.topic,
+        difficulty: config.difficulty,
+        numQuestions: config.numQ,
+      });
       setQuestions(qs);
+      setCurrentIdx(0);
       setAnswers([]);
-      setCurrent(0);
       setSelectedIdx(null);
       setAnswered(false);
       setExplanation("");
-      setTimeLeft(config.timePerQ);
       setStreak(0);
-      setPhase(PHASE.PLAYING);
-    } catch (e) {
-      console.error("Quiz generation failed:", e);
-      setError(`Failed to generate quiz: ${e.message}`);
-      setPhase(PHASE.SETUP);
+      setPhase("playing");
+    } catch (err) {
+      setError(
+        err.message ||
+          "Failed to generate quiz. Check your API key and try again.",
+      );
+      setPhase("setup");
     }
-  };
+  }
 
-  // ── Handle answer timeout ──────────────────────────────────────────────────
-  const handleTimeout = () => {
-    clearInterval(timerRef.current);
-    setAnswered(true);
-    setStreak(0);
-    setAnswers((prev) => [...prev, { selected: -1, correct: false, timedOut: true }]);
-    show("⏰ Time's up!", "⏰");
-    // No explanation on timeout
-    setExplanation("You ran out of time. " + (questions[current]?.explanation || ""));
-  };
-
-  // ── Handle option select ───────────────────────────────────────────────────
-  const handleSelect = async (idx) => {
+  // ── Select an answer ───────────────────────────────────────────────────────
+  async function handleSelect(idx, timedOut = false) {
     if (answered) return;
     clearInterval(timerRef.current);
 
-    const q = questions[current];
-    const isCorrect = idx === q.correct;
-
     setSelectedIdx(idx);
     setAnswered(true);
-    setAnswers((prev) => [...prev, { selected: idx, correct: isCorrect, timedOut: false }]);
 
-    if (isCorrect) {
-      setStreak((s) => s + 1);
-      show("Correct! ✦", "✓");
-    } else {
+    const q = questions[currentIdx];
+    const isCorrect = !timedOut && idx === q.correct;
+
+    // Adaptive difficulty
+    const newStreak = isCorrect ? streak + 1 : 0;
+    setStreak(newStreak);
+    if (newStreak >= 3) {
+      const di = DIFFICULTY_ORDER.indexOf(config.difficulty);
+      if (di < DIFFICULTY_ORDER.length - 1) {
+        handleConfigChange({ difficulty: DIFFICULTY_ORDER[di + 1] });
+      }
       setStreak(0);
-      show("Not quite. See explanation below.", "✗");
+    } else if (!isCorrect && streak === 0) {
+      const di = DIFFICULTY_ORDER.indexOf(config.difficulty);
+      if (di > 0) handleConfigChange({ difficulty: DIFFICULTY_ORDER[di - 1] });
     }
 
-    // Fetch AI explanation
-    setLoadingExp(true);
+    // Store answer — shape matches what QuizResultView reads
+    setAnswers((prev) => [
+      ...prev,
+      { correct: isCorrect, selected: idx, timedOut },
+    ]);
+
+    // Fetch AI explanation (non-fatal if fails)
+    setLoadingExpl(true);
     try {
-      const exp = await generateExplanation({
+      const expl = await apiGenerateExplanation({
         question: q.question,
-        correctOption: q.options[q.correct],
-        chosenOption: q.options[idx],
+        options: q.options,
+        correctIndex: q.correct,
+        chosenIndex: idx,
       });
-      setExplanation(exp);
+      setExplanation(expl);
     } catch {
-      setExplanation(q.explanation || "");
+      setExplanation("");
+    } finally {
+      setLoadingExpl(false);
     }
-    setLoadingExp(false);
-  };
+  }
 
-  // ── Advance to next question or results ────────────────────────────────────
-  const handleNext = () => {
-    if (current + 1 >= questions.length) {
-      // Save to store
+  // ── Next question ──────────────────────────────────────────────────────────
+  function handleNext() {
+    if (currentIdx + 1 >= questions.length) {
       const finalScore = answers.filter((a) => a.correct).length;
       recordQuizResult(
         config.subject,
         config.topic,
         config.difficulty,
         finalScore,
-        questions.length
+        questions.length,
       );
-      setPhase(PHASE.RESULT);
+      setPhase("result");
     } else {
-      setCurrent((c) => c + 1);
+      setCurrentIdx((i) => i + 1);
       setSelectedIdx(null);
       setAnswered(false);
       setExplanation("");
-      setTimeLeft(config.timePerQ);
     }
-  };
+  }
 
-  // ── Config change (from setup form) ───────────────────────────────────────
-  const handleConfigChange = (patch) => {
-    setConfig((c) => ({ ...c, ...patch }));
-  };
+  // ── Retry same topic ───────────────────────────────────────────────────────
+  function handleRetry() {
+    setAnswers([]);
+    setSelectedIdx(null);
+    setAnswered(false);
+    setExplanation("");
+    setError("");
+    setStreak(0);
+    handleGenerate();
+  }
 
-  // ── Result actions ─────────────────────────────────────────────────────────
-  const handleNewQuiz = () => {
-    setPhase(PHASE.SETUP);
+  // ── New quiz (back to setup) ───────────────────────────────────────────────
+  function handleNewQuiz() {
+    setPhase("setup");
     setQuestions([]);
     setAnswers([]);
+    setSelectedIdx(null);
+    setAnswered(false);
+    setExplanation("");
     setError("");
-  };
+    setStreak(0);
+  }
 
-  const handleRetry = () => {
-    handleGenerate();
-  };
+  // ── Derived values ─────────────────────────────────────────────────────────
+  const score = answers.filter((a) => a.correct).length;
+  const pct = questions.length
+    ? Math.round((score / questions.length) * 100)
+    : 0;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  if (phase === PHASE.SETUP) {
+  // ── Render by phase ────────────────────────────────────────────────────────
+  if (phase === "loading") {
+    return <LoadingPage message="Generating quiz with AI…" />;
+  }
+
+  if (phase === "setup") {
     return (
-      <>
-        <QuizSetupView
-          config={config}
-          onConfigChange={handleConfigChange}
-          onGenerate={handleGenerate}
-          loading={false}
-          error={error}
-        />
-        <Toast message={toast?.msg} icon={toast?.icon} />
-      </>
+      <QuizSetupView
+        config={config}
+        onConfigChange={handleConfigChange}
+        onGenerate={handleGenerate}
+        loading={false}
+        error={error}
+      />
     );
   }
 
-  if (phase === PHASE.LOADING) {
+  if (phase === "playing") {
+    const q = questions[currentIdx];
     return (
-      <div className="loading-page fade-in">
-        <div className="loading-page__ring" />
-        <div className="loading-page__title">Generating your quiz…</div>
-        <div className="loading-page__sub">
-          Claude is crafting {config.numQ} questions on {config.topic}
-        </div>
-      </div>
+      <QuizPlayView
+        question={q.question}
+        options={q.options}
+        correctIndex={answered ? q.correct : null}
+        currentIdx={currentIdx}
+        total={questions.length}
+        difficulty={config.difficulty}
+        topic={config.topic}
+        timeLeft={timeLeft}
+        timeMax={config.timePerQ}
+        streak={streak}
+        answered={answered}
+        selectedIdx={selectedIdx}
+        explanation={explanation}
+        loadingExplanation={loadingExpl}
+        onSelect={handleSelect}
+        onNext={handleNext}
+      />
     );
   }
 
-  if (phase === PHASE.PLAYING) {
-    const q = questions[current];
+  if (phase === "result") {
     return (
-      <>
-        <QuizPlayView
-          question={q.question}
-          options={q.options}
-          correctIndex={q.correct}
-          currentIdx={current}
-          total={questions.length}
-          difficulty={adaptiveDifficulty()}
-          topic={config.topic}
-          timeLeft={timeLeft}
-          timeMax={config.timePerQ}
-          streak={streak}
-          answered={answered}
-          selectedIdx={selectedIdx}
-          explanation={explanation}
-          loadingExplanation={loadingExp}
-          onSelect={handleSelect}
-          onNext={handleNext}
-        />
-        <Toast message={toast?.msg} icon={toast?.icon} />
-      </>
-    );
-  }
-
-  if (phase === PHASE.RESULT) {
-    const finalScore = answers.filter((a) => a.correct).length;
-    const pct = Math.round((finalScore / questions.length) * 100);
-    return (
-      <>
-        <QuizResultView
-          score={finalScore}
-          total={questions.length}
-          pct={pct}
-          subject={config.subject}
-          topic={config.topic}
-          difficulty={config.difficulty}
-          questions={questions}
-          answers={answers}
-          onRetry={handleRetry}
-          onNewQuiz={handleNewQuiz}
-        />
-        <Toast message={toast?.msg} icon={toast?.icon} />
-      </>
+      <QuizResultView
+        score={score}
+        total={questions.length}
+        pct={pct}
+        subject={config.subject}
+        topic={config.topic}
+        difficulty={config.difficulty}
+        questions={questions}
+        answers={answers}
+        onRetry={handleRetry}
+        onNewQuiz={handleNewQuiz}
+      />
     );
   }
 

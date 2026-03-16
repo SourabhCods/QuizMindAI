@@ -2,12 +2,32 @@
 // Pure view for the quiz feature: three distinct screens rendered by phase.
 // Zero business logic — all decisions come from QuizPresenter via props.
 
-import { LoadingPage, Spinner, InfoBanner, ProgressBar, EmptyState } from "./primitives.jsx";
-import { SUBJECTS, DIFFICULTIES, TOPICS, QUIZ_LENGTHS, TIME_PER_Q_MIN, TIME_PER_Q_MAX, TIME_PER_Q_STEP } from "../model/constants.js";
+import {
+  LoadingPage,
+  Spinner,
+  InfoBanner,
+  ProgressBar,
+  EmptyState,
+} from "./primitives.jsx";
+import {
+  SUBJECTS,
+  DIFFICULTIES,
+  TOPICS,
+  QUIZ_LENGTHS,
+  TIME_PER_Q_MIN,
+  TIME_PER_Q_MAX,
+  TIME_PER_Q_STEP,
+} from "../model/constants.js";
 
 // ── Setup screen ──────────────────────────────────────────────────────────────
 
-export function QuizSetupView({ config, onConfigChange, onGenerate, loading, error }) {
+export default function QuizSetupView({
+  config,
+  onConfigChange,
+  onGenerate,
+  loading,
+  error,
+}) {
   return (
     <div className="fade-in">
       <div className="page-header">
@@ -21,10 +41,12 @@ export function QuizSetupView({ config, onConfigChange, onGenerate, loading, err
 
       <div className="section">
         <div className="card card--p" style={{ maxWidth: 540 }}>
-
           {/* Error */}
           {error && (
-            <div className="info-banner info-banner--coral" style={{ marginBottom: 14 }}>
+            <div
+              className="info-banner info-banner--coral"
+              style={{ marginBottom: 14 }}
+            >
               <span>⚠</span>
               <span>{error}</span>
             </div>
@@ -44,7 +66,9 @@ export function QuizSetupView({ config, onConfigChange, onGenerate, loading, err
                   })
                 }
               >
-                {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
+                {SUBJECTS.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -70,7 +94,9 @@ export function QuizSetupView({ config, onConfigChange, onGenerate, loading, err
                 value={config.difficulty}
                 onChange={(e) => onConfigChange({ difficulty: e.target.value })}
               >
-                {DIFFICULTIES.map((d) => <option key={d}>{d}</option>)}
+                {DIFFICULTIES.map((d) => (
+                  <option key={d}>{d}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -80,7 +106,9 @@ export function QuizSetupView({ config, onConfigChange, onGenerate, loading, err
                 value={config.numQ}
                 onChange={(e) => onConfigChange({ numQ: +e.target.value })}
               >
-                {QUIZ_LENGTHS.map((n) => <option key={n}>{n}</option>)}
+                {QUIZ_LENGTHS.map((n) => (
+                  <option key={n}>{n}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -100,17 +128,28 @@ export function QuizSetupView({ config, onConfigChange, onGenerate, loading, err
               step={TIME_PER_Q_STEP}
               value={config.timePerQ}
               onChange={(e) => onConfigChange({ timePerQ: +e.target.value })}
-              style={{ width: "100%", accentColor: "var(--c-teal)", marginBottom: 4 }}
+              style={{
+                width: "100%",
+                accentColor: "var(--c-teal)",
+                marginBottom: 4,
+              }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.62rem", color: "var(--c-text-dim)" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "0.62rem",
+                color: "var(--c-text-dim)",
+              }}
+            >
               <span>{TIME_PER_Q_MIN}s</span>
               <span>{TIME_PER_Q_MAX}s</span>
             </div>
           </div>
 
           <InfoBanner variant="teal" icon="⬡">
-            <strong>Adaptive difficulty is ON.</strong> Questions get harder as you
-            build a correct-answer streak.
+            <strong>Adaptive difficulty is ON.</strong> Questions get harder as
+            you build a correct-answer streak.
           </InfoBanner>
 
           <button
@@ -119,7 +158,13 @@ export function QuizSetupView({ config, onConfigChange, onGenerate, loading, err
             onClick={onGenerate}
             disabled={loading}
           >
-            {loading ? <><Spinner /> Generating…</> : "⚡ Generate Quiz with AI"}
+            {loading ? (
+              <>
+                <Spinner /> Generating…
+              </>
+            ) : (
+              "⚡ Generate Quiz with AI"
+            )}
           </button>
         </div>
       </div>
@@ -152,8 +197,8 @@ export function QuizPlayView({
     timerPct > 50
       ? "var(--c-teal)"
       : timerPct > 25
-      ? "var(--c-amber)"
-      : "var(--c-coral)";
+        ? "var(--c-amber)"
+        : "var(--c-coral)";
 
   const getOptionClass = (i) => {
     let cls = "quiz__option";
@@ -191,7 +236,9 @@ export function QuizPlayView({
               Question {currentIdx + 1} / {total}
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
-              <span className={`diff-${difficulty.toLowerCase()}`}>{difficulty}</span>
+              <span className={`diff-${difficulty.toLowerCase()}`}>
+                {difficulty}
+              </span>
               <span className="chip chip--gray">{topic}</span>
             </div>
           </div>
@@ -214,7 +261,10 @@ export function QuizPlayView({
 
         {/* Progress */}
         <div style={{ marginBottom: 24 }}>
-          <ProgressBar percent={(currentIdx / total) * 100} color="var(--c-teal)" />
+          <ProgressBar
+            percent={(currentIdx / total) * 100}
+            color="var(--c-teal)"
+          />
         </div>
 
         {/* Question text */}
@@ -228,9 +278,7 @@ export function QuizPlayView({
             disabled={answered}
             onClick={() => onSelect(i)}
           >
-            <span className="quiz__option-key">
-              {["A", "B", "C", "D"][i]}
-            </span>
+            <span className="quiz__option-key">{["A", "B", "C", "D"][i]}</span>
             {opt}
           </button>
         ))}
@@ -238,9 +286,7 @@ export function QuizPlayView({
         {/* Explanation */}
         {answered && (
           <div className="quiz__explanation fade-in">
-            <div className="quiz__explanation-label">
-              ✦ AI Explanation
-            </div>
+            <div className="quiz__explanation-label">✦ AI Explanation</div>
             {loadingExplanation ? (
               <div
                 style={{
@@ -262,7 +308,11 @@ export function QuizPlayView({
         {/* Next button */}
         {answered && (
           <div
-            style={{ marginTop: 18, display: "flex", justifyContent: "flex-end" }}
+            style={{
+              marginTop: 18,
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
             className="fade-in"
           >
             <button className="btn btn--primary" onClick={onNext}>
@@ -290,21 +340,28 @@ export function QuizResultView({
   onNewQuiz,
 }) {
   const ringColor =
-    pct >= 75 ? "var(--c-teal)" : pct >= 50 ? "var(--c-amber)" : "var(--c-coral)";
+    pct >= 75
+      ? "var(--c-teal)"
+      : pct >= 50
+        ? "var(--c-amber)"
+        : "var(--c-coral)";
 
   const headline =
     pct >= 90
       ? "Outstanding ✦"
       : pct >= 75
-      ? "Great work ⬡"
-      : pct >= 50
-      ? "Good effort ▣"
-      : "Keep practising △";
+        ? "Great work ⬡"
+        : pct >= 50
+          ? "Good effort ▣"
+          : "Keep practising △";
 
   return (
     <div className="fade-in quiz-wrap">
       {/* Score ring */}
-      <div className="card card--p" style={{ textAlign: "center", marginBottom: 18 }}>
+      <div
+        className="card card--p"
+        style={{ textAlign: "center", marginBottom: 18 }}
+      >
         <div className="quiz__result-ring" style={{ borderColor: ringColor }}>
           <div className="quiz__result-pct" style={{ color: ringColor }}>
             {pct}%
@@ -314,10 +371,23 @@ export function QuizResultView({
           </div>
         </div>
         <h2 style={{ fontSize: "1.15rem", marginBottom: 5 }}>{headline}</h2>
-        <p style={{ color: "var(--c-text-sub)", fontSize: "0.78rem", marginBottom: 20 }}>
+        <p
+          style={{
+            color: "var(--c-text-sub)",
+            fontSize: "0.78rem",
+            marginBottom: 20,
+          }}
+        >
           {topic} · {difficulty} · {subject}
         </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <button className="btn btn--amber" onClick={onNewQuiz}>
             New Quiz
           </button>
@@ -329,7 +399,9 @@ export function QuizResultView({
 
       {/* Per-question breakdown */}
       <div className="card card--p">
-        <h3 style={{ fontSize: "0.9rem", marginBottom: 16 }}>Question Breakdown</h3>
+        <h3 style={{ fontSize: "0.9rem", marginBottom: 16 }}>
+          Question Breakdown
+        </h3>
         {questions.map((q, i) => {
           const ans = answers[i];
           const correct = ans?.correct;
@@ -371,7 +443,13 @@ export function QuizResultView({
                 >
                   {correct ? "✓" : "✗"}
                 </span>
-                <span style={{ fontSize: "0.82rem", fontWeight: 500, lineHeight: 1.5 }}>
+                <span
+                  style={{
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                    lineHeight: 1.5,
+                  }}
+                >
                   {q.question}
                 </span>
               </div>

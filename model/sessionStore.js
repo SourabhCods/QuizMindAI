@@ -3,8 +3,8 @@
 // Presenter reads and writes this; Views never touch it directly.
 
 const store = {
-  quizHistory: [],   // [{ subject, topic, difficulty, score, total, pct, date }]
-  topicScores: {},   // { "Subject::Topic": [pct, pct, ...] }
+  quizHistory: [], // [{ subject, topic, difficulty, score, total, pct, date }]
+  topicScores: {}, // { "Subject::Topic": [pct, pct, ...] }
 };
 
 // ── Mutations ─────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ export function getTotalQuizzes() {
 export function getOverallAvg() {
   if (!store.quizHistory.length) return 0;
   return Math.round(
-    store.quizHistory.reduce((a, b) => a + b.pct, 0) / store.quizHistory.length
+    store.quizHistory.reduce((a, b) => a + b.pct, 0) / store.quizHistory.length,
   );
 }
 

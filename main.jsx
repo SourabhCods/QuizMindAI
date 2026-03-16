@@ -19,11 +19,11 @@ import "./styles/components.css";
 import { Sidebar } from "./view/Sidebar.jsx";
 
 // ── Presenters ────────────────────────────────────────────────────────────────
-import { StudentHomePresenter }  from "./presenter/StudentHomePresenter.jsx";
-import { QuizPresenter }         from "./presenter/QuizPresenter.jsx";
-import { AnalyticsPresenter }    from "./presenter/AnalyticsPresenter.jsx";
-import { TeacherHomePresenter }  from "./presenter/TeacherHomePresenter.jsx";
-import { ReportsPresenter }      from "./presenter/ReportsPresenter.jsx";
+import { StudentHomePresenter } from "./presenter/StudentHomePresenter.jsx";
+import QuizPresenter from "./presenter/QuizPresenter.jsx";
+import { AnalyticsPresenter } from "./presenter/AnalyticsPresenter.jsx";
+import { TeacherHomePresenter } from "./presenter/TeacherHomePresenter.jsx";
+import { ReportsPresenter } from "./presenter/ReportsPresenter.jsx";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 import { ROLES, PAGES } from "./model/constants.js";
@@ -31,8 +31,8 @@ import { ROLES, PAGES } from "./model/constants.js";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [role,       setRole]       = useState(ROLES.STUDENT);
-  const [page,       setPage]       = useState(PAGES.HOME);
+  const [role, setRole] = useState(ROLES.STUDENT);
+  const [page, setPage] = useState(PAGES.HOME);
   const [quizConfig, setQuizConfig] = useState({});
 
   // ── Navigation handler passed to all Presenters ───────────────────────────
@@ -99,9 +99,7 @@ export default function App() {
         onRoleSwitch={handleRoleSwitch}
         onNavigate={handleNavigate}
       />
-      <main className="app__main">
-        {renderPresenter()}
-      </main>
+      <main className="app__main">{renderPresenter()}</main>
     </div>
   );
 }
